@@ -171,6 +171,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        with:
+          name: installers-other
+          path: docker
       - name: Google Auth
         id: auth
         uses: 'google-github-actions/auth@v3'
