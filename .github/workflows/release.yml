@@ -167,7 +167,6 @@ jobs:
     # needs: [build-other]
     permissions:
       contents: 'read'
-      packages: 'read'
       id-token: 'write'
     runs-on: ubuntu-latest
     steps:
@@ -197,4 +196,4 @@ jobs:
       #   run: |
       #     docker build -f docker/Dockerfile.alpine -t "europe-west2-docker.pkg.dev/woodlodge-api/traccar/traccar:${{ github.ref_name }}" --build-arg VERSION=${{ github.ref_name }} ./
       #     docker push "europe-west2-docker.pkg.dev/woodlodge-api/traccar/traccar:${{ github.ref_name }}"
-
+# https://iam.googleapis.com/projects/507840710224/locations/global/workloadIdentityPools/github-action-pool/providers/github-action-provider
