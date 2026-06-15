@@ -212,9 +212,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(12, fmbXXX, (p, b) -> p.set(Position.KEY_FUEL_USED, b.readUnsignedInt() / 1000.0));
         register(13, fmbXXX, (p, b) -> p.set(Position.KEY_FUEL_CONSUMPTION, b.readUnsignedShort() / 100.0));
         register(16, any, (p, b) -> {
-            LOGGER.info("KEY_ODOMETER test 16");
-            LOGGER.info(b);
-            LOGGER.info(b.readUnsignedInt());
+            LOGGER.info("KEY_ODOMETER test 16###" + b.readUnsignedInt());
             p.set(Position.KEY_ODOMETER, b.readUnsignedInt());
         });
         register(17, any, (p, b) -> p.set("axisX", b.readShort()));
@@ -307,8 +305,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(10835, fmbXXX, (p, b) -> p.set("eyeRoll4", b.readShort()));
 
         register(11807, any, (p, b) -> {
-            LOGGER.info("KEY_ODOMETER test 11807");
-            LOGGER.info(b);
+            LOGGER.info("KEY_ODOMETER test 11807 ###" + b.readUnsignedInt());
             p.set(Position.KEY_ODOMETER, b.readUnsignedInt() * 1000.0);
         });
     }
@@ -335,8 +332,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private void decodeParameter(Position position, int id, ByteBuf buf, int length, int codec, String model) {
-        LOGGER.info("codec PRINT TEST");
-        LOGGER.info(codec);
+        LOGGER.info("codec PRINT TEST ### " + codec);
         if (codec == CODEC_GH3000) {
             decodeGh3000Parameter(position, id, buf, length);
             return;
