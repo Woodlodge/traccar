@@ -19,6 +19,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.helper.BufferUtil;
 import org.traccar.session.DeviceSession;
@@ -44,6 +46,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TeltonikaProtocolDecoder.class);
 
     private static final int IMAGE_PACKET_MAX = 2048;
 
@@ -208,9 +212,9 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(12, fmbXXX, (p, b) -> p.set(Position.KEY_FUEL_USED, b.readUnsignedInt() / 1000.0));
         register(13, fmbXXX, (p, b) -> p.set(Position.KEY_FUEL_CONSUMPTION, b.readUnsignedShort() / 100.0));
         register(16, any, (p, b) -> {
-            System.out.println("KEY_ODOMETER test 16");
-            System.out.println(b);
-            System.out.println(b.readUnsignedInt());
+            LOGGER.info("KEY_ODOMETER test 16");
+            LOGGER.info(b);
+            LOGGER.info(b.readUnsignedInt());
             p.set(Position.KEY_ODOMETER, b.readUnsignedInt());
         });
         register(17, any, (p, b) -> p.set("axisX", b.readShort()));
@@ -303,8 +307,8 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(10835, fmbXXX, (p, b) -> p.set("eyeRoll4", b.readShort()));
 
         register(11807, any, (p, b) -> {
-            System.out.println("KEY_ODOMETER test 11807");
-            System.out.println(b);
+            LOGGER.info("KEY_ODOMETER test 11807");
+            LOGGER.info(b);
             p.set(Position.KEY_ODOMETER, b.readUnsignedInt() * 1000.0);
         });
     }
@@ -314,7 +318,6 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
             case 1 -> position.set(Position.KEY_BATTERY_LEVEL, readValue(buf, length));
             case 2 -> position.set("usbConnected", readValue(buf, length) == 1);
             case 5 -> position.set("uptime", readValue(buf, length));
-            case 16 -> position.set(Position.KEY_ODOMETER, readValue(buf, length));
             case 20 -> position.set(Position.KEY_HDOP, readValue(buf, length) / 10.0);
             case 21 -> position.set(Position.KEY_VDOP, readValue(buf, length) / 10.0);
             case 22 -> position.set(Position.KEY_PDOP, readValue(buf, length) / 10.0);
@@ -332,6 +335,8 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private void decodeParameter(Position position, int id, ByteBuf buf, int length, int codec, String model) {
+        LOGGER.info("codec PRINT TEST");
+        LOGGER.info(codec);
         if (codec == CODEC_GH3000) {
             decodeGh3000Parameter(position, id, buf, length);
             return;
