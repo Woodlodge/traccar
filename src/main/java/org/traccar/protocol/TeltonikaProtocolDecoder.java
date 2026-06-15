@@ -19,6 +19,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.helper.BufferUtil;
 import org.traccar.session.DeviceSession;
@@ -44,6 +46,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TeltonikaProtocolDecoder.class);
 
     private static final int IMAGE_PACKET_MAX = 2048;
 
@@ -207,7 +211,10 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(11, fmbXXX, (p, b) -> p.set(Position.KEY_ICCID, String.valueOf(b.readLong())));
         register(12, fmbXXX, (p, b) -> p.set(Position.KEY_FUEL_USED, b.readUnsignedInt() / 1000.0));
         register(13, fmbXXX, (p, b) -> p.set(Position.KEY_FUEL_CONSUMPTION, b.readUnsignedShort() / 100.0));
-        register(16, any, (p, b) -> p.set(Position.KEY_ODOMETER, b.readUnsignedInt()));
+        register(16, any, (p, b) -> {
+            LOGGER.info("KEY_ODOMETER test 16###" + b.readUnsignedInt());
+            p.set(Position.KEY_ODOMETER, b.readUnsignedInt());
+        });
         register(17, any, (p, b) -> p.set("axisX", b.readShort()));
         register(18, any, (p, b) -> p.set("axisY", b.readShort()));
         register(19, any, (p, b) -> p.set("axisZ", b.readShort()));
@@ -296,6 +303,11 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         register(10833, fmbXXX, (p, b) -> p.set("eyeRoll2", b.readShort()));
         register(10834, fmbXXX, (p, b) -> p.set("eyeRoll3", b.readShort()));
         register(10835, fmbXXX, (p, b) -> p.set("eyeRoll4", b.readShort()));
+
+        register(11807, any, (p, b) -> {
+            LOGGER.info("KEY_ODOMETER test 11807 ###" + b.readUnsignedInt());
+            p.set(Position.KEY_ODOMETER, b.readUnsignedInt() * 1000.0);
+        });
     }
 
     private void decodeGh3000Parameter(Position position, int id, ByteBuf buf, int length) {
@@ -320,6 +332,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private void decodeParameter(Position position, int id, ByteBuf buf, int length, int codec, String model) {
+        LOGGER.info("codec PRINT TEST ### " + codec);
         if (codec == CODEC_GH3000) {
             decodeGh3000Parameter(position, id, buf, length);
             return;
