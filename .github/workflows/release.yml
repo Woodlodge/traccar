@@ -164,6 +164,10 @@ jobs:
   docker:
     name: Docker
     # needs: [test, build-other]
+    permissions:
+      contents: 'read'
+      packages: 'read'
+      id-token: 'write'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
