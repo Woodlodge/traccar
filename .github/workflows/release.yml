@@ -91,7 +91,7 @@ jobs:
   #         cp setup.sh traccar.service out/
   #         jlink --add-modules java.se,jdk.charsets,jdk.crypto.ec,jdk.unsupported --output out/jre
   #         makeself --needroot --quiet --notemp out traccar.run "traccar" ./setup.sh
-  #         zip -q -j "traccar-linux-64-${{ github.event.inputs.version }}.zip" traccar.run README.txt
+  #         zip -q -j "traccar-linux-64-${{ github.ref_name }}.zip" traccar.run README.txt
   #     - uses: actions/upload-artifact@v7
   #       with:
   #         name: installers-linux-64
@@ -119,7 +119,7 @@ jobs:
         run: |
           mkdir -p out/data out/logs
           cp README.txt out/
-          (cd out && zip -q -r "../traccar-other-${{ github.event.inputs.version }}.zip" .)
+          (cd out && zip -q -r "../traccar-other-${{ github.ref_name }}.zip" .)
       - uses: actions/upload-artifact@v7
         with:
           name: installers-other
@@ -141,7 +141,7 @@ jobs:
   #         - name: Linux 64
   #           runner: ubuntu-latest
   #           artifact: installers-linux-64
-  #           file: traccar-linux-64-${{ github.event.inputs.version }}.zip
+  #           file: traccar-linux-64-${{ github.ref_name }}.zip
   #           logs_dir: /opt/traccar/logs
   #           start: sudo systemctl start traccar
   #           sudo: sudo
