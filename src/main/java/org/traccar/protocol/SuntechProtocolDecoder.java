@@ -20,19 +20,19 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
+import org.traccar.Protocol;
 import org.traccar.config.Keys;
 import org.traccar.helper.BcdUtil;
-import org.traccar.helper.BufferUtil;
-import org.traccar.helper.model.AttributeUtil;
-import org.traccar.session.DeviceSession;
-import org.traccar.Protocol;
 import org.traccar.helper.BitUtil;
+import org.traccar.helper.BufferUtil;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.DateUtil;
 import org.traccar.helper.UnitsConverter;
+import org.traccar.helper.model.AttributeUtil;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
+import org.traccar.session.DeviceSession;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -197,6 +197,7 @@ public class SuntechProtocolDecoder extends BaseProtocolDecoder {
             default -> null;
         };
     }
+
     private Position decode4(
             Channel channel, SocketAddress remoteAddress, String[] values) {
         int index = 0;
@@ -972,9 +973,10 @@ public class SuntechProtocolDecoder extends BaseProtocolDecoder {
                 return decode9(channel, remoteAddress, values);
             } else if (prefix.startsWith("ST4")) {
                 return decode4(channel, remoteAddress, values);
-            } else {
+            } else if (prefix.startsWith("S")) {
                 return decode2356(channel, remoteAddress, prefix.substring(0, 5), values);
             }
+            return null;
         }
     }
 

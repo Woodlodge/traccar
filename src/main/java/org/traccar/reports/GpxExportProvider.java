@@ -15,11 +15,14 @@
  */
 package org.traccar.reports;
 
+import org.traccar.config.Config;
+import org.traccar.config.Keys;
 import org.traccar.helper.DateUtil;
 import org.traccar.helper.model.PositionUtil;
 import org.traccar.model.Device;
 import org.traccar.model.Geofence;
 import org.traccar.model.Position;
+import org.traccar.model.User;
 import org.traccar.storage.Storage;
 import org.traccar.storage.StorageException;
 import org.traccar.storage.query.Columns;
@@ -37,22 +40,26 @@ import javax.xml.stream.XMLStreamWriter;
 
 public class GpxExportProvider {
 
+    private final Config config;
     private final Storage storage;
 
     @Inject
-    public GpxExportProvider(Storage storage) {
+    public GpxExportProvider(Config config, Storage storage) {
+        this.config = config;
         this.storage = storage;
     }
 
     public void generate(
-            OutputStream outputStream, long deviceId, long geofenceId, Date from, Date to)
+            OutputStream outputStream, long userId, long deviceId, long geofenceId, Date from, Date to)
             throws StorageException, XMLStreamException {
 
         var device = storage.getObject(Device.class, new Request(
                 new Columns.All(), new Condition.Equals("id", deviceId)));
 
         Geofence geofence = geofenceId == 0 ? null : storage.getObject(Geofence.class, new Request(
-                new Columns.All(), new Condition.Equals("id", geofenceId)));
+                new Columns.All(), new Condition.And(
+                        new Condition.Equals("id", geofenceId),
+                        new Condition.Permission(User.class, userId, Geofence.class))));
 
         XMLStreamWriter writer = XMLOutputFactory.newFactory()
                 .createXMLStreamWriter(outputStream, StandardCharsets.UTF_8.name());
@@ -65,7 +72,8 @@ public class GpxExportProvider {
         writer.writeCharacters(device.getName());
         writer.writeEndElement();
         writer.writeStartElement("trkseg");
-        try (Stream<Position> positions = PositionUtil.getPositionsStream(storage, deviceId, from, to)
+        try (Stream<Position> positions = PositionUtil.getPositionsStream(
+                storage, deviceId, from, to, config.getInteger(Keys.REPORT_MAX_POSITIONS), 0)
                 .filter(position -> geofence == null || geofence.containsPosition(position))) {
             for (var iterator = positions.iterator(); iterator.hasNext();) {
                 Position position = iterator.next();

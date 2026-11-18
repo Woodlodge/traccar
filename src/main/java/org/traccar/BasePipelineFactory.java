@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 - 2024 Anton Tananaev (anton@traccar.org)
+ * Copyright 2012 - 2026 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,10 @@ import org.traccar.handler.network.OpenChannelHandler;
 import org.traccar.handler.network.RemoteAddressHandler;
 import org.traccar.handler.network.StandardLoggingHandler;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class BasePipelineFactory extends ChannelInitializer<Channel> {
 
@@ -42,6 +45,7 @@ public abstract class BasePipelineFactory extends ChannelInitializer<Channel> {
     private final Config config;
     private final String protocol;
     private final int timeout;
+    private final Set<String> forwardProtocols;
 
     public BasePipelineFactory(TrackerConnector connector, Config config, String protocol) {
         this.injector = Main.getInjector();
@@ -53,6 +57,12 @@ public abstract class BasePipelineFactory extends ChannelInitializer<Channel> {
             this.timeout = config.getInteger(Keys.SERVER_TIMEOUT);
         } else {
             this.timeout = timeout;
+        }
+        if (config.hasKey(Keys.SERVER_FORWARD_PROTOCOLS)) {
+            forwardProtocols = new HashSet<>(
+                    Arrays.asList(config.getString(Keys.SERVER_FORWARD_PROTOCOLS).split("[, ]")));
+        } else {
+            forwardProtocols = null;
         }
     }
 
@@ -91,9 +101,9 @@ public abstract class BasePipelineFactory extends ChannelInitializer<Channel> {
             pipeline.addLast(new IdleStateHandler(timeout, 0, 0));
         }
         pipeline.addLast(new OpenChannelHandler(connector));
-        if (config.hasKey(Keys.SERVER_FORWARD)) {
-            int port = config.getInteger(Keys.PROTOCOL_PORT.withPrefix(protocol));
-            pipeline.addLast(injectMembers(new NetworkForwarderHandler(port)));
+        if (config.hasKey(Keys.SERVER_FORWARD)
+                && (forwardProtocols == null || forwardProtocols.contains(protocol))) {
+            pipeline.addLast(injectMembers(new NetworkForwarderHandler()));
         }
         pipeline.addLast(new NetworkMessageHandler());
         pipeline.addLast(injectMembers(new StandardLoggingHandler(protocol)));

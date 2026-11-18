@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 - 2023 Anton Tananaev (anton@traccar.org)
+ * Copyright 2018 - 2026 Anton Tananaev (anton@traccar.org)
  * Copyright 2018 Andrey Kunitsyn (andrey@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,19 +17,21 @@
 package org.traccar.sms;
 
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
+import org.apache.commons.text.StringEscapeUtils;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
 import org.traccar.helper.DataConverter;
+import org.traccar.helper.WebHelper;
 import org.traccar.notification.MessageException;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 
 public class HttpSmsClient implements SmsManager {
 
@@ -73,6 +75,9 @@ public class HttpSmsClient implements SmsManager {
         if (mediaType == MediaType.APPLICATION_JSON_TYPE) {
             return new String(JsonStringEncoder.getInstance().quoteAsString(value));
         }
+        if (mediaType == MediaType.APPLICATION_XML_TYPE) {
+            return StringEscapeUtils.escapeXml10(value);
+        }
         return value;
     }
 
@@ -95,13 +100,14 @@ public class HttpSmsClient implements SmsManager {
     }
 
     @Override
-    public void sendMessage(String phone, String message, boolean command) throws MessageException {
-        try (Response response = getRequestBuilder().post(
-                Entity.entity(preparePayload(phone, message), mediaType.withCharset(StandardCharsets.UTF_8.name())))) {
+    public CompletableFuture<Void> sendMessage(String phone, String message, boolean command) {
+        Entity<String> entity = Entity.entity(
+                preparePayload(phone, message), mediaType.withCharset(StandardCharsets.UTF_8.name()));
+        return WebHelper.post(getRequestBuilder(), entity, response -> {
             if (response.getStatus() / 100 != 2) {
                 throw new MessageException(response.readEntity(String.class));
             }
-        }
+        });
     }
 
 }

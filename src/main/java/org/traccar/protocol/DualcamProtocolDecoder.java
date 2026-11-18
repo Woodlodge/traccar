@@ -18,17 +18,17 @@ package org.traccar.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import org.traccar.BaseProtocolDecoder;
-import org.traccar.session.DeviceSession;
+import org.traccar.BaseMediaProtocolDecoder;
 import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
 import org.traccar.helper.BitUtil;
 import org.traccar.model.Position;
+import org.traccar.session.DeviceSession;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
-public class DualcamProtocolDecoder extends BaseProtocolDecoder {
+public class DualcamProtocolDecoder extends BaseMediaProtocolDecoder {
 
     public DualcamProtocolDecoder(Protocol protocol) {
         super(protocol);
@@ -49,7 +49,6 @@ public class DualcamProtocolDecoder extends BaseProtocolDecoder {
     private int dataSize;
     private int dataCurrent;
     private boolean video;
-    private ByteBuf media;
 
     private boolean isPacketData() {
         return dataSize < 8192;
@@ -60,15 +59,10 @@ public class DualcamProtocolDecoder extends BaseProtocolDecoder {
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
         getLastLocation(position, null);
-        try {
-            if (video) {
-                position.set(Position.KEY_VIDEO, writeMediaFile(uniqueId, media, "h265"));
-            } else {
-                position.set(Position.KEY_IMAGE, writeMediaFile(uniqueId, media, "jpg"));
-            }
-        } finally {
-            media.release();
-            media = null;
+        if (video) {
+            position.set(Position.KEY_VIDEO, writeMediaFile(uniqueId, "h265"));
+        } else {
+            position.set(Position.KEY_IMAGE, writeMediaFile(uniqueId, "jpg"));
         }
         if (channel != null) {
             ByteBuf response = Unpooled.buffer();
@@ -86,14 +80,20 @@ public class DualcamProtocolDecoder extends BaseProtocolDecoder {
 
         int type = buf.readUnsignedShort();
 
-        DeviceSession deviceSession;
+        if (type != MSG_INIT && getDeviceSession(channel, remoteAddress) == null) {
+            return null;
+        }
+
         switch (type) {
             case MSG_INIT:
                 buf.readUnsignedShort(); // protocol id
                 uniqueId = String.valueOf(buf.readLong());
-                deviceSession = getDeviceSession(channel, remoteAddress, uniqueId);
+                DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, uniqueId);
+                if (deviceSession == null) {
+                    return null;
+                }
                 long settings = buf.readUnsignedInt();
-                if (channel != null && deviceSession != null) {
+                if (channel != null) {
                     ByteBuf response = Unpooled.buffer();
                     if (BitUtil.check(settings, 25)) {
                         response.writeShort(MSG_PATH_REQUEST);
@@ -127,7 +127,7 @@ public class DualcamProtocolDecoder extends BaseProtocolDecoder {
                 buf.readUnsignedShort(); // length
                 dataSize = buf.readInt();
                 dataCurrent = isPacketData() ? 1 : 0;
-                media = Unpooled.buffer();
+                newMediaBuffer();
                 if (channel != null) {
                     ByteBuf response = Unpooled.buffer();
                     response.writeShort(MSG_RESUME);
@@ -138,7 +138,7 @@ public class DualcamProtocolDecoder extends BaseProtocolDecoder {
                 break;
             case MSG_DATA:
                 int length = buf.readUnsignedShort() - 2;
-                media.writeBytes(buf, length);
+                getMediaBuffer().writeBytes(buf, length);
                 boolean finished;
                 if (isPacketData()) {
                     finished = dataCurrent == dataSize;
@@ -152,7 +152,7 @@ public class DualcamProtocolDecoder extends BaseProtocolDecoder {
                 }
                 break;
             case MSG_COMPLETE:
-                if (media != null) {
+                if (getMediaBuffer() != null) {
                     return completeMedia(channel, remoteAddress);
                 }
                 break;
